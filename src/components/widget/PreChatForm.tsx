@@ -6,6 +6,7 @@ import { Button, Input, Textarea, Checkbox } from '@evoapi/design-system';
 import { useLanguage } from '@/hooks/useLanguage';
 import { PhoneInput } from '@/components/shared/PhoneInput';
 import '@/components/shared/PhoneInput.css';
+import { getLabel, getPlaceHolder } from '@/components/channels/settings/helpers/preChatHelpers';
 import type {
   PreChatField,
   PreChatFormData,
@@ -116,7 +117,7 @@ export const PreChatForm: React.FC<PreChatFormProps> = ({
   isLoading = false,
   serverErrors,
 }) => {
-  const { t } = useLanguage('widget');
+  const { t, currentLanguage } = useLanguage('widget');
   const [formFields, setFormFields] = useState<PreChatField[]>([]);
 
   const hasActiveCampaign = !!activeCampaign?.id;
@@ -171,9 +172,39 @@ export const PreChatForm: React.FC<PreChatFormProps> = ({
     });
   }, [serverErrors, setError]);
 
+  // Standard field names that should be translated
+  const STANDARD_FIELD_NAMES = ['emailAddress', 'fullName', 'phoneNumber'];
+
+  // Translate standard field labels and placeholders
+  const translatedPreChatFields = useMemo(() => {
+    return filteredPreChatFields.map(field => {
+      // Hybrid approach: use field_type if correct, fallback to name check
+      const isStandard = field.field_type === 'standard' || STANDARD_FIELD_NAMES.includes(field.name);
+      if (isStandard) {
+        const translatedLabel = getLabel({
+          key: field.name,
+          label: field.label,
+          language: currentLanguage,
+        });
+        const translatedPlaceholder = getPlaceHolder({
+          key: field.name,
+          placeholder: field.placeholder || '',
+          label: translatedLabel,
+          language: currentLanguage,
+        });
+        return {
+          ...field,
+          label: translatedLabel,
+          placeholder: translatedPlaceholder,
+        };
+      }
+      return field;
+    });
+  }, [filteredPreChatFields, currentLanguage]);
+
   useEffect(() => {
-    setFormFields(filteredPreChatFields);
-  }, [filteredPreChatFields]);
+    setFormFields(translatedPreChatFields);
+  }, [translatedPreChatFields]);
 
   // Get field value
   const getValue = (field: PreChatField, formData: PreChatFormData) => {
