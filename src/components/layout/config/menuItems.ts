@@ -20,7 +20,6 @@ import {
   Workflow,
   Settings,
   List,
-  GraduationCap,
   Shield,
   Package,
   Filter,
@@ -171,11 +170,6 @@ export const getCustomerMenuItems = (t: (key: string) => string): MenuItem[] => 
     icon: Layers,
     resource: 'channels',
     action: 'read',
-  },
-  {
-    name: t('menu.customer.tutorials'),
-    href: '/tutorials',
-    icon: GraduationCap,
   },
   {
     id: 'customer-settings',
