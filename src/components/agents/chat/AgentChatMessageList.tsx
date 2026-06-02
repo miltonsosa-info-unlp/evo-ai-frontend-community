@@ -5,9 +5,10 @@ import { AgentChatMessage } from './AgentChatMessage';
 interface AgentChatMessageListProps {
   messages: ChatMessage[];
   isSending: boolean;
+  onSendMessage?: (content: string, displayContent?: string) => Promise<void>;
 }
 
-export function AgentChatMessageList({ messages, isSending }: AgentChatMessageListProps) {
+export function AgentChatMessageList({ messages, isSending, onSendMessage }: AgentChatMessageListProps) {
   // Filter out system messages without content (metadata messages)
   const visibleMessages = messages.filter(message => {
     // Skip messages with null content
@@ -40,7 +41,7 @@ export function AgentChatMessageList({ messages, isSending }: AgentChatMessageLi
   return (
     <div className="space-y-4 w-full max-w-full">
       {visibleMessages.map(message => (
-        <AgentChatMessage key={message.id} message={message} />
+        <AgentChatMessage key={message.id} message={message} onSendMessage={onSendMessage} />
       ))}
 
       {isSending && (

@@ -1,11 +1,40 @@
 import { useState } from 'react';
 import { ChatMessage } from '@/types';
-import { Bot, User, ChevronDown, ChevronRight } from 'lucide-react';
+import { Bot, User, ChevronDown, ChevronRight, Check } from 'lucide-react';
 import { isImageFile, type FileData } from '@/utils/fileUtils';
 import { Image, FileText, File } from 'lucide-react';
 
+const EVO_PREFIX = 'EVO_STRUCTURED:';
+
+interface StructuredItem {
+  title: string;
+  value: string;
+}
+
+interface StructuredInput {
+  type: string;
+  sourceType: string;
+  isMultiple: boolean;
+  items: StructuredItem[];
+}
+
+function parseStructured(text: string): { displayText: string; structured: StructuredInput | null } {
+  const idx = text.indexOf(EVO_PREFIX);
+  if (idx === -1) return { displayText: text, structured: null };
+  try {
+    const json = JSON.parse(text.slice(idx + EVO_PREFIX.length));
+    return {
+      displayText: text.slice(0, idx).trimEnd(),
+      structured: json.input as StructuredInput,
+    };
+  } catch {
+    return { displayText: text, structured: null };
+  }
+}
+
 interface AgentChatMessageProps {
   message: ChatMessage;
+  onSendMessage?: (content: string, displayContent?: string) => Promise<void>;
 }
 
 interface FunctionMessageContent {
@@ -14,7 +43,82 @@ interface FunctionMessageContent {
   author?: string;
 }
 
-export function AgentChatMessage({ message }: AgentChatMessageProps) {
+interface StructuredSelectProps {
+  structured: StructuredInput;
+  onSend: (value: string, displayContent: string) => void;
+}
+
+function StructuredSelect({ structured, onSend }: StructuredSelectProps) {
+  const [selected, setSelected] = useState<string[]>([]);
+  const [sent, setSent] = useState(false);
+
+  const toggle = (item: StructuredItem) => {
+    if (!structured.isMultiple) {
+      setSent(true);
+      onSend(item.value, item.title);
+      return;
+    }
+    setSelected(prev =>
+      prev.includes(item.value) ? prev.filter(v => v !== item.value) : [...prev, item.value],
+    );
+  };
+
+  const confirm = () => {
+    if (selected.length === 0) return;
+    setSent(true);
+    const selectedItems = structured.items.filter(item => selected.includes(item.value));
+    onSend(selected.join(', '), selectedItems.map(i => i.title).join(', '));
+  };
+
+  if (sent) {
+    return (
+      <div className="mt-2 text-xs text-muted-foreground italic">
+        ✓ Respuesta enviada
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 flex flex-col gap-2">
+      {structured.items.map(item => {
+        const isSelected = selected.includes(item.value);
+        return (
+          <button
+            key={item.value}
+            onClick={() => toggle(item)}
+            className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm text-left transition-colors hover:bg-primary/10 ${
+              isSelected
+                ? 'border-primary bg-primary/10 font-medium'
+                : 'border-border bg-background'
+            }`}
+          >
+            {structured.isMultiple && (
+              <span
+                className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${
+                  isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'
+                }`}
+              >
+                {isSelected && <Check className="h-3 w-3" />}
+              </span>
+            )}
+            {item.title}
+          </button>
+        );
+      })}
+      {structured.isMultiple && (
+        <button
+          onClick={confirm}
+          disabled={selected.length === 0}
+          className="mt-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity disabled:opacity-40 hover:opacity-90"
+        >
+          Confirmar selección
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function AgentChatMessage({ message, onSendMessage }: AgentChatMessageProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const isUser = message.author === 'user';
   // Safety check: ensure content exists and has parts
@@ -90,6 +194,16 @@ export function AgentChatMessage({ message }: AgentChatMessageProps) {
   const messageContent = getMessageContent();
   const inlineDataParts = parts.filter((part: any) => part.inline_data);
 
+  // Parse EVO_STRUCTURED from plain text messages
+  const rawText = typeof messageContent === 'string' ? messageContent : null;
+  const { displayText, structured } = rawText
+    ? parseStructured(rawText)
+    : { displayText: rawText ?? '', structured: null };
+
+  const handleStructuredSend = (value: string, displayContent: string) => {
+    if (onSendMessage) onSendMessage(value, displayContent);
+  };
+
   return (
     <div className="flex w-full" style={{ justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
       <div
@@ -141,6 +255,19 @@ export function AgentChatMessage({ message }: AgentChatMessageProps) {
                   <pre className="whitespace-pre-wrap text-xs max-w-full overflow-x-auto">
                     {messageContent.content}
                   </pre>
+                </div>
+              )}
+            </div>
+          ) : structured ? (
+            <div className="break-words max-w-full">
+              {displayText && (
+                <p className="whitespace-pre-wrap">{displayText}</p>
+              )}
+              {onSendMessage ? (
+                <StructuredSelect structured={structured} onSend={handleStructuredSend} />
+              ) : (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {structured.items.map(item => item.title).join(' · ')}
                 </div>
               )}
             </div>

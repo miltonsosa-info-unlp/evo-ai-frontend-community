@@ -110,7 +110,11 @@ export function AgentChatArea({ agent }: AgentChatAreaProps) {
           </div>
         ) : (
           <div className="p-4">
-            <AgentChatMessageList messages={messages} isSending={isSending} />
+            <AgentChatMessageList
+              messages={messages}
+              isSending={isSending}
+              onSendMessage={(content, displayContent) => sendMessage(content, undefined, displayContent)}
+            />
           </div>
         )}
       </div>

@@ -18,7 +18,7 @@ interface AgentChatContextValue {
   selectSession: (sessionId: string | null) => Promise<void>;
   createNewSession: () => Promise<void>;
   deleteSession: (sessionId: string) => Promise<void>;
-  sendMessage: (content: string, files?: FileData[]) => Promise<void>;
+  sendMessage: (content: string, files?: FileData[], displayContent?: string) => Promise<void>;
   clearMessages: () => void;
 }
 
@@ -161,7 +161,7 @@ export function AgentChatProvider({ children, agentId }: AgentChatProviderProps)
   }, [selectedSessionId, loadSessions]);
 
   // Send message via HTTP endpoint
-  const sendMessageHandler = useCallback(async (content: string, files?: FileData[]) => {
+  const sendMessageHandler = useCallback(async (content: string, files?: FileData[], displayContent?: string) => {
     if (!agentId) return;
 
     // Require session to be selected - don't create automatically
@@ -173,10 +173,11 @@ export function AgentChatProvider({ children, agentId }: AgentChatProviderProps)
     setIsSending(true);
 
     // Create temporary user message for optimistic update
+    const visibleText = displayContent || content;
     const tempUserMessage: ChatMessage = {
       id: `temp-${Date.now()}`,
       content: {
-        parts: [{ text: content }],
+        parts: [{ text: visibleText }],
         role: 'user',
       },
       author: 'user',
@@ -212,7 +213,7 @@ export function AgentChatProvider({ children, agentId }: AgentChatProviderProps)
             const userMessage: ChatMessage = {
               id: `user-${Date.now()}`,
               content: {
-                parts: [{ text: content }],
+                parts: [{ text: visibleText }],
                 role: 'user',
               },
               author: 'user',
