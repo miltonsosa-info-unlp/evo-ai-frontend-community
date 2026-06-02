@@ -684,6 +684,8 @@
             "typebot": {
               "url": "URL *",
               "typebotId": "ID de Typebot *",
+              "apiKey": "Clave API (opcional)",
+              "apiKeyHelp": "Requerida solo para bots privados o instancias self-hosted con autenticación activada.",
               "apiVersion": "Versión de la API",
               "apiVersions": {
                 "latest": "Última",

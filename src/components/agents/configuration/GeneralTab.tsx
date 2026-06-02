@@ -303,11 +303,7 @@ export const GeneralTab = ({
               <ExternalAgentConfig
                 mode="edit"
                 agentId={agent.id}
-                data={
-                  {
-                    provider: externalConfigData.provider as any,
-                  } as ExternalAgentConfigData
-                }
+                data={externalConfigData as unknown as ExternalAgentConfigData}
                 onChange={data => {
                   onExternalConfigChange({
                     ...externalConfigData,

@@ -5,6 +5,7 @@ export interface TypebotConfig {
   url?: string;
   typebot?: string;
   apiVersion?: 'latest' | string;
+  apiKey?: string;
 }
 
 interface TypebotConfigFormProps {
@@ -49,6 +50,20 @@ export const TypebotConfigForm = ({
         {errors.typebot && (
           <p className="text-xs text-red-600">{errors.typebot}</p>
         )}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="typebot_apiKey">{t('edit.configuration.sections.externalIntegration.forms.typebot.apiKey')}</Label>
+        <Input
+          id="typebot_apiKey"
+          type="password"
+          value={config.apiKey || ''}
+          onChange={(e) => onChange({ ...config, apiKey: e.target.value })}
+          placeholder="tb_..."
+          disabled={disabled}
+        />
+        <p className="text-xs text-muted-foreground">
+          {t('edit.configuration.sections.externalIntegration.forms.typebot.apiKeyHelp')}
+        </p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="typebot_apiVersion">{t('edit.configuration.sections.externalIntegration.forms.typebot.apiVersion')}</Label>
